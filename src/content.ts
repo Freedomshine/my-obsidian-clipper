@@ -11,7 +11,7 @@ import { serializeChildren } from './utils/dom-utils';
 import { saveFile } from './utils/file-utils';
 import { debugLog } from './utils/debug';
 import { updateSidebarWidth, addResizeHandle, cleanupResizeHandlers } from './utils/iframe-resize';
-import { parseForClip } from './utils/clip-utils';
+import { parseForClip, prepareClipDocument } from './utils/clip-utils';
 
 declare global {
 	interface Window {
@@ -153,9 +153,9 @@ declare global {
 		}
 
 		if (request.action === "copyMarkdownToClipboard") {
-			flattenShadowDom(document).then(() => {
+			flattenShadowDom(document).then(async () => {
 				try {
-					const defuddled = parseForClip(document);
+					const defuddled = parseForClip(await prepareClipDocument(document));
 
 					// Convert HTML content to markdown
 					const markdown = createMarkdownContent(defuddled.content, document.URL);
@@ -180,7 +180,7 @@ declare global {
 		if (request.action === "saveMarkdownToFile") {
 			flattenShadowDom(document).then(async () => {
 				try {
-					const defuddled = parseForClip(document);
+					const defuddled = parseForClip(await prepareClipDocument(document));
 					const markdown = createMarkdownContent(defuddled.content, document.URL);
 					const title = defuddled.title || document.title || 'Untitled';
 					const fileName = title.replace(/[/\\?%*:|"<>]/g, '-');
@@ -215,7 +215,7 @@ declare global {
 
 				// Use parseAsync to ensure async variables like {{transcript}} are available.
 				// If it hangs (e.g. another extension has corrupted fetch), fall back to sync parse.
-				const defuddle = new Defuddle(document, { url: document.URL });
+				const defuddle = new Defuddle(await prepareClipDocument(document), { url: document.URL });
 				const parseTimeout = new Promise<never>((_, reject) =>
 					setTimeout(() => reject(new Error('parseAsync timeout')), 8000)
 				);

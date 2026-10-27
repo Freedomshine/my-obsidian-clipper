@@ -1,5 +1,19 @@
 import Defuddle from 'defuddle/full';
 import { setElementHTML } from './dom-utils';
+import { isClaudeConversation, prepareClaudeDocument } from './claude-conversation';
+
+// Returns the document to hand to Defuddle. Usually that's the live page, but
+// some sites need a prepared copy before Defuddle can see all of the content.
+export async function prepareClipDocument(doc: Document): Promise<Document> {
+	if (isClaudeConversation(doc.URL)) {
+		try {
+			return await prepareClaudeDocument(doc);
+		} catch (error) {
+			console.error('[Obsidian Clipper] Failed to prepare Claude conversation:', error);
+		}
+	}
+	return doc;
+}
 
 // Parse document content for clipping. In reader mode, extracts from
 // the article's original HTML to avoid reader UI artifacts.
